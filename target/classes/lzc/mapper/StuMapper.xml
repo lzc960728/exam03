@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="lzc.mapper.StuMapper">
+ 	<select id="list" resultType="lzc.entity.Student">
+ 		SELECT a.*,b.`cname`,GROUP_CONCAT(d.`kname`) kname FROM `stu` a LEFT JOIN `clazz` b ON a.`cid` = b.`cid` 
+		LEFT JOIN `s_c` c ON a.`sid` = c.`sid` LEFT JOIN  `course` d ON c.kid = d.`kid` 
+		GROUP BY a.`sid`
+ 	</select>
+ </mapper>

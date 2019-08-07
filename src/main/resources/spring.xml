@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+	
+	
+	<!-- com.bw下的东西给spring管理 -->
+	<context:component-scan base-package="lzc" />
+	
+	<!-- 创建数据源（数据连接池使用dbcp） -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+		<!-- 改成自己的数据库   -->
+		<property name="url" value="jdbc:mysql://localhost:3306/week2?createDatabaseIfNotExist=true&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;zeroDateTimeBehavior=convertToNull&amp;transformedBitIsBoolean=true"/>
+		<property name="username" value="root"/>
+		<property name="password" value="123"/>
+		<!-- 连接池的最大值 -->
+		<property name="maxActive" value="800"/>
+	</bean>
+
+	
+	<!-- 创建SqlSession -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:mybatis.xml"></property> 
+		<!-- 别名 之前配置在mybatis.xml -->
+		<!-- 会自动扫描给定包下的所有类, com.bwie.bean.User => user -->
+		<!-- <property name="typeAliasesPackage"><value>com.bw.entity</value></property> -->
+		<!-- 加载映射文件,自动扫描给定包下的所有XXX.xml -->
+		<!-- <property name="mapperLocations">
+			<value>classpath:com/bw/mapper/*.xml</value>
+		</property> -->
+		<!-- 加载mybatis的核心配置文件 -->
+
+	</bean>
+	<!-- 扫描mybatis操作数据库的接口 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 自动扫描给定包下的mapper接口,将mapper接口的实现交给映射文件来处理 -->
+		<property name="basePackage">
+			<value>lzc.mapper</value>
+		</property>
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	
+	<!-- 配置事务管理器  -->
+	<!-- 将数据源注入,使其能对我们执行的sql语句进行事务管理 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 事务处理  -->
+	<aop:config>
+		<!-- 切点 -->
+		<aop:pointcut expression="execution(* lzc.service.*.*(..))" id="trPointcut"/>
+		<aop:advisor advice-ref="trAdvice" pointcut-ref="trPointcut"/>
+	</aop:config>
+	<tx:advice id="trAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+		<!-- getUserList,getUserById,等方法都不参与事务,只读(不能修改数据库中的数据) -->
+			<tx:method name="find*" propagation="REQUIRED" read-only="true"/>
+			<tx:method name="get*" propagation="REQUIRED" read-only="true"/>
+			<tx:method name="query*" propagation="REQUIRED" read-only="true"/>
+			<!-- 在service实现类中,所有以insert/delete/update/add/grant/save开头的方法都将参与事务 -->
+			<tx:method name="*" propagation="REQUIRED"/>
+		</tx:attributes>
+	</tx:advice>
+
+	</beans>
